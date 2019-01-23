@@ -7,23 +7,24 @@ const round = num => Math.round(Math.abs(num)) * (num >= 0 ? 1 : -1)
 const signOf = num => appliedTo => num >= 0 ? appliedTo : -appliedTo
 
 function createCurrency ({symb}) {
-  const currencyConstructor = function ( value, isIntValue = false ) {
-    if (!(this instanceof currencyConstructor)) {
-      return new currencyConstructor(value, isIntValue)
+
+  // TODO add check for safe integer at creation
+  const CurrencyConstructor = function ( value, isIntValue = false ) {
+    if (!(this instanceof CurrencyConstructor)) {
+      return new CurrencyConstructor(value, isIntValue)
     }
 
-    if (!isNaN(value)) {
+    if (isNaN(value)) {
       throw Error('Input to currency constructor must be valid number')
     }
 
     this.intValue = round(isIntValue ? value : value * 100)
   }
 
-  // TODO should add check for safe integer after each calculation?
-  currencyConstructor.prototype = Object.assign(
+  CurrencyConstructor.prototype = Object.assign(
     Object.create(Currency.prototype),
     {
-      compat: [currencyConstructor],
+      compat: [CurrencyConstructor],
       symb,
 
       /* Method to add compatible currencies */
@@ -37,11 +38,11 @@ function createCurrency ({symb}) {
 
       /* Currency operations */
       add ( value ) {
-        if (this.compat.some(type => value instanceof type)) { return new currencyConstructor(this.intValue + value.intValue, true) }
+        if (this.compat.some(type => value instanceof type)) { return new CurrencyConstructor(this.intValue + value.intValue, true) }
         else { throw Error('Trying to add non-compatible type/currency to currency object') }
       },
       subtract ( value ) {
-        if (this.compat.some(type => value instanceof type)) { return new currencyConstructor(this.intValue - value.intValue, true) }
+        if (this.compat.some(type => value instanceof type)) { return new CurrencyConstructor(this.intValue - value.intValue, true) }
         else { throw Error('Trying to add non-compatible type/currency to currency object') }
       },
       sub ( value ) {
@@ -49,20 +50,20 @@ function createCurrency ({symb}) {
       },
       multiply ( number ) {
         if (!isNaN(number)) {
-          return new currencyConstructor(round(this.intValue* number), true)
+          return new CurrencyConstructor(round(this.intValue* number), true)
         } else {
           throw Error('Multiplying currency by non-number')
         }
       },
       divide ( number ) {
         if (!isNaN(number)) {
-          return new currencyConstructor(round(this.intValue / number), true)
+          return new CurrencyConstructor(round(this.intValue / number), true)
         } else {
           throw Error('Dividing currency by non-number')
         }
       },
       negate () {
-        return new currencyConstructor(-this.intValue, true)
+        return new CurrencyConstructor(-this.intValue, true)
       },
       distribute ( n ) {
         if (Number.isSafeInteger(n) && n > 0) {
@@ -70,18 +71,18 @@ function createCurrency ({symb}) {
           const sign = signOf(intValue)
           const absVal = Math.abs(intValue)
           const absLeastShare = Math.floor(absVal / n)
-          const absRemainder = absVal - ( n * leastShare )
+          const absRemainder = absVal - ( n * absLeastShare)
           
           /* Distribute leastShare and one part of the absRemainder into absRemainder currency objects */
           const a = []
           for ( var i = 0; i < absRemainder; i++ ) {
-            a.push(new currencyConstructor(sign(absLeastShare + 1), true))
+            a.push(new CurrencyConstructor(sign(absLeastShare + 1), true))
           }
 
           /* Distribute leastShare into n - absRemainder currency objects */
           const b = []
           for ( var i = 0; i < n - absRemainder; i++) {
-            b.push(new currencyConstructor(sign(absLeastShare), true))
+            b.push(new CurrencyConstructor(sign(absLeastShare), true))
           }
 
           return a.concat(b)
@@ -115,15 +116,14 @@ function createCurrency ({symb}) {
     }
   )
 
-  currencyConstructor.addCompat = function ( currency ) {
-    currencyConstructor.prototype.addCompat( currency )
+  CurrencyConstructor.addCompat = function ( currency ) {
+    CurrencyConstructor.prototype.addCompat( currency )
   }
 
-  return currencyConstructor
+  return CurrencyConstructor
 }
 
 module.exports = {
   createCurrency,
-  SomeConstructor,
   Currency
 }
