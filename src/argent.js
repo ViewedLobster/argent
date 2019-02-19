@@ -18,7 +18,12 @@ function createCurrency ({symb}) {
       throw Error('Input to currency constructor must be valid number')
     }
 
-    this.intValue = round(isIntValue ? value : value * 100)
+    const intValue = round(isIntValue ? value : value * 100)
+    if (!Number.isSafeInteger(intValue)) {
+      throw Error('intValue is not safe integer')
+    }
+
+    this.intValue = intValue
   }
 
   CurrencyConstructor.prototype = Object.assign(
